@@ -1,0 +1,9 @@
+{
+  "framework": "jasmine2",
+  "test_page": "test/browser-suite.html",
+  "launchers": {
+    "j": {
+      "command": "jasmine-node --verbose ./test/node-suite.spec.js"
+    }
+  }  
+}

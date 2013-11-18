@@ -1,0 +1,27 @@
+{
+  "name": "metafunction",
+  "version": "0.0.0",
+  "description": "description",
+  "homepage" : "https://github.com/dfkaye/metafunction",
+  "author": {
+    "name": "david kaye (@dfkaye)",
+    "email" : "dfkaye@yahoo.com"
+  },
+  "dependencies": {
+    "vm-shim": "~0.0.0"
+  },
+  "devDependencies": {
+    "jasmine-node": "~1.0.0",
+    "vm-shim": "~0.0.0"
+  },
+  "license": "MIT",
+  "main": "./metafunction.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/dfkaye/metafunction.git"
+  },
+  "scripts": {
+    "test": "jasmine-node --verbose ./test/node-suite.spec.js",
+    "test-scope": "jasmine-node --verbose ./test/scope.spec.js"
+  }
+}
