@@ -1,20 +1,21 @@
 // metafunction.js
 
 
-(function (metafunction, undefined) {
+(function (metafunction, vm, undefined) {
 
   if (typeof global == 'undefined' && window) {  
     global = window;
   }
 
-  var vm = vm || (function() {
-    if (typeof require == 'function') {
-      return require('vm-shim');
-    }
-  }());
-  
+  if (typeof vm == 'undefined' && typeof require == 'function') {
+    vm = require('vm-shim');
+  }
+
   metafunction = {
-  
+    
+    // inspect: inspect,
+    // splice: splice,
+    parse: parse
   }
 
   if (typeof module != 'undefined') {
@@ -23,7 +24,41 @@
     global.metafunction = metafunction
   }
   
-  
+  /*
+   *  param function
+   *  returns object describing function parts - arguments, body, returns, source
+   */
+  function parse(fn) {
+
+    typeof fn == 'function' || (function () {
+      throw new Error('parse(fn) argument should be function but was ' + typeof fn)
+    }())
+    
+    var res = {}
+    var fs = fn.toString()
+    var matches, i;
+    
+    try {
+    
+      res.source = fs;
+      res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).replace(/\s*/g, '').split(',')
+      res.body = fs.substring(fs.indexOf('{') + 1, fs.lastIndexOf('}'))
+      
+      var matches = fs.match(/[^\/^\]]return ([^\n]*)/g)
+      if (matches) {
+          for (var i = 0; i < matches.length; ++i) {
+              matches[i] = matches[i].replace(/[\s]*return[\s]+/g, '').replace(/(\;|\r)*/g, '')
+          }
+      }
+      res.returns = matches || [];
+      
+    } catch (error) {
+      res.err = error
+    }
+    
+    return res;
+  }
+
 /*IMPL - mockScope*/
 // function mockScope(fn, alias) {
 
@@ -74,34 +109,6 @@
     // }
   // }
 // };
-
-/*ALTERNATE IMPL - function.parse*/
-// Function.prototype.parse = parse; function parse(fn) {
-
-  // fn = fn || this
-  
-  // var res = {}
-  // var fs = fn.toString()
-  
-  // try {
-  
-    // res.source = fs;
-    // res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).split(',')
-    // res.body = fs.substring(fs.indexOf('{') + 1, fs.lastIndexOf('}'))
-    // var matches = fs.match(/[^\/^\]]return ([^\n]*)/g)
-    // if (matches) {
-        // for (var i = 0; i < matches.length; ++i) {
-            // matches[i] = matches[i].replace(/[\s]*return[\s]+/g, '').replace(/[\;]+\r/, '')
-        // }
-    // }
-    // res.returns = matches || [];
-    
-  // } catch (error) {
-    // res.err = error
-  // }
-  
-  // return res;
-// }
 
 /*test self*/
 // var p = Function.prototype.parse.parse()

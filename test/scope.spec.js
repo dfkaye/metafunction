@@ -1,10 +1,9 @@
 // scope.spec.js
 
-  var vm = vm || (function() {
-    if (typeof require == 'function') {
-      return require('vm-shim');
-    }
-  }());
+
+if (typeof vm == 'undefined' && typeof require == 'function') {
+vm = require('vm-shim');
+}
   /*** SUBJECT - TO BE MOVED OUT ***/
   
 function mockScope(fn, alias) {
