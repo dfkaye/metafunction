@@ -1,20 +1,19 @@
 // metafunction.js
 
-
-(function (metafunction, vm, undefined) {
+(function (metafunction, undefined) {
 
   if (typeof global == 'undefined' && window) {  
     global = window;
   }
 
-  if (typeof vm == 'undefined' && typeof require == 'function') {
-    vm = require('vm-shim');
-  }
+  var vm = global.vm || (function() {
+    if (typeof require == 'function') {
+      return require('vm-shim')
+    }
+  }())
 
   metafunction = {
-    
-    // inspect: inspect,
-    // splice: splice,
+    mockScope: mockScope,
     parse: parse
   }
 
@@ -25,8 +24,9 @@
   }
   
   /*
-   *  param function
-   *  returns object describing function parts - arguments, body, returns, source
+   * method parse
+   * param function
+   * returns object describing function parts - arguments, body, returns, source
    */
   function parse(fn) {
 
@@ -59,90 +59,44 @@
     return res;
   }
 
-/*IMPL - mockScope*/
-// function mockScope(fn, alias) {
+  /*
+   * method mockScope
+   * param function
+   * param alias
+   * returns object with injection and invocation methods for mocking internal references 
+   * in a closure
+   */
+  function mockScope(fn, alias) {
 
-  // var source = fn.toString()
-  
-  // if (typeof alias == 'string') {
-    // source = source.replace(/function[^\(]*/, 'function ' + alias) + '\n;'
-  // }
-  
-  // return {
-    // source : function () {
-      // return source
-    // },
-    // inject : function (key, value) {
-      // source = source.replace(key, value)
-      // return this
-    // },
-    // invoke : function (fn, context) {
-      // fn = !fn ? '' : fn.toString()
-      // vm.runInNewContext(source + ';\n' + '(' + fn + '());', context)
-      // return this
-    // }
-  // }
-// }
-
-// Function.prototype.mock = mock; function mock(alias) {
-
-  // var fn = this;
-  
-  // var source = fn.toString()
-  
-  // if (typeof alias == 'string') {
-    // source = source.replace(/function[^\(]*/, 'function ' + alias) + '\n;'
-  // }
-  
-  // return {
-    // source : function () {
-      // return source
-    // },
-    // inject : function (key, value) {
-      // source = source.replace(key, value)
-      // return this
-    // },
-    // invoke : function (fn, context) {
-      // fn = !fn ? '' : fn.toString()
-      // vm.runInNewContext(source + ';\n' + '(' + fn + '());', context)
-      // return this
-    // }
-  // }
-// };
-
-/*test self*/
-// var p = Function.prototype.parse.parse()
-// console.dir(p)
-
-/*test subject*/
-// var fn = (function(){
-
-  // var pValue = 444;
-  // var pObject = { id: 'invisible man' };
-
-  // function pFunc() {
-    // return 'pFuncified';
-  // }
-
-  // function fn(type) {
-    // var which = (type || '').toLowerCase();
+    var source = fn.toString()
     
-    // if (which == 'value') return pValue;
-    // if (which == 'object') return pObject;
-    // return pFunc();
-  // }
-  
-  // return fn;
-// }());
-
-// var res = fn.parse()
-// console.dir(res)
-// console.warn(fn('value'))
-// console.log(fn('object'))
-// console.log(fn(''))
-
-
+    if (typeof alias == 'string') {
+      source = source.replace(/function[^\(]*/, 'function ' + alias) + '\n;'
+    }
+    
+    return {
+    
+      source : function () {
+        return source
+      },
+      
+      inject : function (key, value) {
+        source = source.replace(key, value)
+        return this
+      },
+      
+      invoke : function (fn, context) {
+      
+        if (typeof fn != 'function') {
+          fn = 'function(){' + fn + '}';
+        } else {
+          fn = fn.toString()
+        }
+        
+        vm.runInNewContext(source + ';\n' + '(' + fn + '());', context)
+        return this
+      }
+    }
+  }
 
 }());
-
-
