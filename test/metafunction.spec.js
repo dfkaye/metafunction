@@ -117,6 +117,39 @@ describe('metafunction', function () {
       
     });
     
+    describe('readme example', function () {
+    
+      var mockScope = metafunction.mockScope;
+      
+      it ('should pass', function () {
+      
+        var fn = (function () {
+        
+          // I'm a closure defined by an IIFE
+          
+          var inside = true;
+          
+          function run() {
+            return inside;
+          }
+          
+          return run;
+          
+        }());
+      
+
+        var mock = mockScope(fn, 'myFn'); // alias is optional 'name' for fn but should be used for the internal invocation
+        
+        mock.inject('inside', 'mockInside');
+        
+        mock.invoke(function () {
+        
+          expect(myFn()).toBe('mocked') // should pass
+          
+        }, { expect: expect, mockInside: 'mocked' });
+      });
+    });
+    
     describe('fixtures', function () {
     
       it('should find fixture', function () {

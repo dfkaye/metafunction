@@ -1,46 +1,68 @@
 metafunction
 ============
 
-[working name]
-
-[in progress]
-
-Adds capabilities over Function() constructor and function.toString() - parse(), splice(), eval(), etc.
+provides capabilities for function inspection and mocking to address the following:
 
 + how can we inspect items defined in closures?
 + how can we override (or mock) them?
-+ <code>vm#mockScope(code) #source #inject #invoke()</code>
 
+metafunction.parse(fn)
+----------------------
 
-mock-scope := work-in-progress
-------------------------------
+`function.toString()` is one thing - `metafunction.parse(fn)` returns the parts 
+of a function definition (arguments, body, returns, source).
 
-I had been looking for a way to use *reflection* in closures, due to the side-
-effects from another exchange of rants with Phil Walton (@philwalton) 
+metafunction.mockScope(fn, alias)
+---------------------------------
+
+For testing, functions should be re-definable via reflection for mocking/overwriting 
+symbols and references within "closures" or "privatized module functions"
+
+I developed this idea while working on [vm-shim](https://github.com/dfkaye/vim-shim)
+on which this repo depends, following an exchange with Phil Walton (@philwalton) 
 (see [Mocking - not testing - private functions](https://gist.github.com/dfkaye/5987716)).  
 
-But I realized we only need to mock certain items in closures at any time, not 
-all of them, and not just inspect them during tests.  So I've come up with a 
-mock-scope injection utility for that which depends on `runInNewContext`.  This 
-will be added to the vm-shim API when "done"
+    describe('readme example', function () {
+    
+      var mockScope = metafunction.mockScope;
+      
+      it ('should pass', function () {
+      
+        // fixture
+        var fn = (function () {
+          
+          var inside = true;
+          
+          function run() {
+            // I'm a closure inside by an IIFE
+            return inside;
+          }
+          return run;
+        }());
+      
+        var mock = mockScope(fn, 'alias'); // alias is used by invocation
+        
+        mock.inject('inside', 'mockInside');
+        
+        mock.invoke(function () {
+        
+          expect(alias()).toBe('mocked') // should pass, calling alias()
+          
+        }, { expect: expect, mockInside: 'mocked' });
+      });
+    });
 
+Instead of figuring out the internal value inside the closure, we only override 
+the reference to the variable holding onto it, first with `inject` which takes 
+the target name and the mocking name, then with `invoke` with takes a function 
+inside which we can call the alias of the closure.  Note the trick here is to 
+pass a second `context` argument (a la `vm.runInContext`), which contains 
+references to the test library's `expect` method, and a value to be set for the 
+the injected name 'mockInside.'
 
-why
----
-
-+ Function() constructors should accept functions as arguments, not just strings.
-+ function.toString() is one thing - parse() should return the parts of a function definition (args, body, returns, 
-    source)
-+ For testing, functions should be re-definable via reflection for mocking/overwriting 
-    symbols and references within "closures" or "privatized module functions"
-
-how
----
-
-developed the ideas while working on [vm-shim](https://github.com/dfkaye/vim-shim) which came from reading vojta jina's howtonode post on mocking private 
-state - then hit on another approach from composing modules more declaratively than the OOP-ish shell-script-y commonJS 
-or AMD anti-APIs. 
-[more on that later]
+The complete test spec is contained in 
+[https://github.com/dfkaye/metafunction/blob/master/test/metafunction.spec.js]
+(https://github.com/dfkaye/metafunction/blob/master/test/metafunction.spec.js).
 
 
 node tests
@@ -53,10 +75,6 @@ browser shim).
     npm test
     # => jasmine-node --verbose ./test/node.spec.js
     
-    npm run test-scope
-    # => jasmine-node --verbose ./test/scope.spec.js
-
-
 browser tests
 -------------
 
@@ -65,7 +83,7 @@ Using @pivotallabs'
 the browser suite.
 
 __The *jasmine2* browser test page is viewable on 
-<a href='//rawgithub.com/dfkaye/vm-shim/master/test/browser-suite.html' 
+<a href='//rawgithub.com/dfkaye/metafunction/master/test/browser-suite.html' 
    target='_new' title='opens in new tab or window'>rawgithub</a>.__
   
 Using Toby Ho's MAGNIFICENT [testemjs](https://github.com/airportyh/testem) to 
@@ -81,12 +99,5 @@ View both test types at the console by running:
     
 todo
 ----
-+ test
-+ src
-+ package
-+ rawgithub
-+ testem
-+ jasmine/mocha/tape - not sure yet
-+ npm
-+ thorough snark-free documentation
 
++ npm
