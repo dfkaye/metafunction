@@ -97,7 +97,20 @@ View both test types at the console by running:
     testem -l j
     
     
-todo
-----
+npm
+---
 
-+ npm
+    npm install metafunction
+    
+use
+---
+
++ in node.js:
+
+    var metafunction = require('metafunction')
+    
++ in browser, metafunction is defined on the global scope
+
+    <script src="../metafunction.js"></script>
+    
+    window.metafunction...
