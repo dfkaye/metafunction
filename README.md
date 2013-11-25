@@ -107,10 +107,10 @@ use
 
 + in node.js:
 
-    var metafunction = require('metafunction')
+    `var metafunction = require('metafunction')`
     
 + in browser, metafunction is defined on the global scope
 
-    <script src="../metafunction.js"></script>
+    `<script src="../metafunction.js"></script>`
     
-    window.metafunction...
+    `window.metafunction...`
