@@ -19,7 +19,8 @@ For testing, functions should be re-definable via reflection for mocking/overwri
 symbols and references within "closures" or "privatized module functions"
 
 I developed this idea while working on [vm-shim](https://github.com/dfkaye/vim-shim)
-on which this repo depends, following an exchange with Phil Walton (@philwalton) 
+on which this repo depends (I've included a local `node_modules/vm-shim` copy for
+the browser-suite.html), following an exchange with Phil Walton (@philwalton) 
 (see [Mocking - not testing - private functions](https://gist.github.com/dfkaye/5987716)).  
 
     describe('readme example', function () {
