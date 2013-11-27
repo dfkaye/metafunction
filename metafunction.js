@@ -6,7 +6,7 @@
     global = window;
   }
 
-  var vm = vm || (function() {
+  var vm = global.vm || (function() {
     if (typeof require == 'function') {
       return require('vm-shim')
     }
