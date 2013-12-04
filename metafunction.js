@@ -1,6 +1,6 @@
 // metafunction.js
 
-(function (metafunction, undefined) {
+;(function (metafunction, undefined) {
 
   if (typeof global == 'undefined' && window) {  
     global = window;
@@ -10,17 +10,17 @@
     if (typeof require == 'function') {
       return require('./lib/vm-shim')
     }
-  }())
+  }());
 
   metafunction = {
     mockScope: mockScope,
     parse: parse
-  }
+  };
 
   if (typeof module != 'undefined') {
-    module.exports = metafunction
+    module.exports = metafunction;
   } else {
-    global.metafunction = metafunction
+    global.metafunction = metafunction;
   }
   
   /*
@@ -32,28 +32,28 @@
 
     typeof fn == 'function' || (function () {
       throw new Error('parse(fn) argument should be function but was ' + typeof fn)
-    }())
+    }());
     
-    var res = {}
-    var fs = fn.toString()
+    var res = {};
+    var fs = fn.toString();
     var matches, i;
     
     try {
     
       res.source = fs;
-      res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).replace(/\s*/g, '').split(',')
-      res.body = fs.substring(fs.indexOf('{') + 1, fs.lastIndexOf('}'))
+      res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).replace(/\s*/g, '').split(',');
+      res.body = fs.substring(fs.indexOf('{') + 1, fs.lastIndexOf('}'));
       
-      var matches = fs.match(/[^\/^\]]return ([^\n]*)/g)
+      var matches = fs.match(/[^\/^\]]return ([^\n]*)/g);
       if (matches) {
           for (var i = 0; i < matches.length; ++i) {
-              matches[i] = matches[i].replace(/[\s]*return[\s]+/g, '').replace(/(\;|\r)*/g, '')
+              matches[i] = matches[i].replace(/[\s]*return[\s]+/g, '').replace(/(\;|\r)*/g, '');
           }
       }
       res.returns = matches || [];
       
     } catch (error) {
-      res.err = error
+      res.err = error;
     }
     
     return res;
@@ -68,10 +68,10 @@
    */
   function mockScope(fn, alias) {
 
-    var source = fn.toString()
+    var source = fn.toString();
     
     if (typeof alias == 'string') {
-      source = source.replace(/function[^\(]*/, 'function ' + alias) + '\n;'
+      source = source.replace(/function[^\(]*/, 'function ' + alias) + '\n;';
     }
     
     return {
@@ -81,7 +81,7 @@
       },
       
       inject : function (key, value) {
-        source = source.replace(key, value)
+        source = source.replace(key, value);
         return this
       },
       
@@ -90,7 +90,7 @@
         if (typeof fn != 'function') {
           fn = 'function(){' + fn + '}';
         } else {
-          fn = fn.toString()
+          fn = fn.toString();
         }
         
         vm.runInNewContext(source + ';\n' + '(' + fn + '());', context)
