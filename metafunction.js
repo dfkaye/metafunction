@@ -8,7 +8,7 @@
 
   var vm = global.vm || (function() {
     if (typeof require == 'function') {
-      return require('vm-shim')
+      return require('./lib/vm-shim')
     }
   }())
 
