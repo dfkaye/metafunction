@@ -1,7 +1,7 @@
 // metafunction.js
 
 ;(function (metafunction, undefined) {
-
+ 
   if (typeof global == 'undefined' && window) {  
     global = window;
   }
@@ -12,7 +12,7 @@
    * returns function object with injection and invocation methods for mocking internal 
    * references in a closure
    */
-  Function.prototype.meta = meta; 
+  Function.prototype.meta = Function.prototype.meta || meta; 
   function meta() {
 
     function f(alias) {
