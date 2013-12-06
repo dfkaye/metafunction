@@ -6,97 +6,157 @@
     global = window;
   }
 
-  var vm = global.vm || (function() {
-    if (typeof require == 'function') {
-      return require('./lib/vm-shim')
-    }
-  }());
-
-  metafunction = {
-    mockScope: mockScope,
-    parse: parse
-  };
-
-  if (typeof module != 'undefined') {
-    module.exports = metafunction;
-  } else {
-    global.metafunction = metafunction;
-  }
-  
   /*
-   * method parse
-   * param function
-   * returns object describing function parts - arguments, body, returns, source
-   */
-  function parse(fn) {
-
-    typeof fn == 'function' || (function () {
-      throw new Error('parse(fn) argument should be function but was ' + typeof fn)
-    }());
-    
-    var res = {};
-    var fs = fn.toString();
-    var matches, i;
-    
-    try {
-    
-      res.source = fs;
-      res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).replace(/\s*/g, '').split(',');
-      res.body = fs.substring(fs.indexOf('{') + 1, fs.lastIndexOf('}'));
-      
-      var matches = fs.match(/[^\/^\]]return ([^\n]*)/g);
-      if (matches) {
-          for (var i = 0; i < matches.length; ++i) {
-              matches[i] = matches[i].replace(/[\s]*return[\s]+/g, '').replace(/(\;|\r)*/g, '');
-          }
-      }
-      res.returns = matches || [];
-      
-    } catch (error) {
-      res.err = error;
-    }
-    
-    return res;
-  }
-
-  /*
-   * method mockScope
-   * param function
+   * method meta
    * param alias
-   * returns object with injection and invocation methods for mocking internal references 
-   * in a closure
+   * returns function object with injection and invocation methods for mocking internal 
+   * references in a closure
    */
-  function mockScope(fn, alias) {
+  Function.prototype.meta = meta; 
+  function meta() {
 
-    var source = fn.toString();
-    
-    if (typeof alias == 'string') {
-      source = source.replace(/function[^\(]*/, 'function ' + alias) + '\n;';
-    }
-    
-    return {
-    
-      source : function () {
-        return source
-      },
+    function f(alias) {
       
-      inject : function (key, value) {
-        source = source.replace(key, value);
-        return this
-      },
+      if (typeof alias == 'string' && !alias.match(/^[\s]+$/)) {
       
-      invoke : function (fn, context) {
+        f.descriptor.source = f.descriptor.source.replace(/function[^\(]*/, 
+                                                          'function ' + alias) + '\n;';
+      }
+
+      return f
+    };
+    
+    f.descriptor = descriptor(this);
+    
+    f.inject = function inject(key, value) {
+      
+      f.descriptor.source = f.descriptor.source.replace(RegExp(key, 'g'), value);
+
+      return f
+    };
+    
+    f.invoke = function invoke(fn, context) {
       
         if (typeof fn != 'function') {
           fn = 'function(){' + fn + '}';
-        } else {
-          fn = fn.toString();
         }
         
-        vm.runInNewContext(source + ';\n' + '(' + fn + '());', context)
-        return this
-      }
-    }
+        runInNewContext(f.descriptor.source + ';\r\n' + '(' + fn.toString() + '());', context)
+
+        return f
+    };
+    
+    return f
   }
 
+  /*
+   * method descriptor
+   * returns object describing function parts - arguments, name, returns, source
+   */
+  //Function.prototype.descriptor = descriptor; 
+  function descriptor(fn) {
+    
+    var fs = fn.toString();
+    var res = {};
+    
+    res.source = fs;
+    res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).replace(/\s*/g, '')
+                      .split(',');
+
+    // extract name from a function expression (https://gist.github.com/dfkaye/6384439)
+    var name;
+    if (name = (fn.name && ['', fn.name]) || (fs.match(/function ([^\(]+)/))) {
+      res.name = name[1];
+    } else {
+    
+      // label the function as 'anonymous' in the source because function expressions must 
+      // be named for use inside Function() constructor (used in runInNewContext()).
+      
+      res.name = 'anonymous';
+      res.source = res.source.replace(/function[^\(]*/, 'function anonymous') + '\n;';
+    }
+    
+    var returns;
+    res.returns = [];
+    if (returns = fs.match(/[^\/^\]]return ([^\n]*)/g)) {
+      for (var i = 0; i < returns.length; ++i) {
+        res.returns[i] = returns[i].replace(/[\s]*return[\s]+/g, '')
+                                   .replace(/(\;|\r)*/g, '');
+      }
+    }
+        
+    return res
+  }; 
+  
+  ///////////////////////////////////////////////////////////////////////////////
+  // runInNewContext() and sandbox() methods pulled/merged from dfkaye/vm-shim //
+  ///////////////////////////////////////////////////////////////////////////////
+  
+  /*
+   * method runInNewContext
+   * param src may be a string or a function
+   * param context is an optional config object of properties to be used as vars inside 
+   * new scope
+   * returns context
+   */   
+  function runInNewContext(src, context/*, filename*/) {
+
+    context = context || {};
+    
+    // Object.create shim to shadow out the main global
+    
+    function F(){}
+    F.prototype = (typeof Window != 'undefined' && Window.prototype) || global;
+    context.global = new F;
+        
+    var code = '';
+    
+    for (var key in context) {
+      if (context.hasOwnProperty(key)) {
+        code += 'var ' + key + ' = context[\'' + key + '\'];\n';
+      }
+    }
+    
+    typeof src == 'string' || (src = '(' + src.toString() + '())');
+
+    // Yep ~ using `with` ~ who said you can't use `with` ~ WHO THE **** SAID THAT
+    code += 'with(context){' + src + '}';
+
+    // run Function() inside the sandbox so we can remove accidental globals
+    return sandbox(function () {
+      Function('context', code).call(null, context)
+      return context
+    })
+  }
+  
+  /*
+   * method sandbox
+   * param function fn 
+   * returns execution result
+   * 
+   * sandbox is a helper function for scrubbing "accidental" un-var'd globals from 
+   * Function() invocations.  Unbelievably, eval() & Function() don't take functions as 
+   * args; eval() leaks un-var'd symbols in browser & node.js; indirect eval() leaks ALL 
+   * vars globally, i.e., where var e = eval; e('var a = 7'); 'a' becomes global, thus, 
+   * defeating the purpose.
+   */
+  function sandbox(fn) {
+  
+    var keys = {};
+    
+    for (var k in global) {
+      keys[k] = k;
+    }
+    
+    var result = fn();
+    
+    for (var k in global) {
+      if (!(k in keys)) {
+        delete global[k];
+      }
+    }
+    
+    return result
+  }
+  
 }());

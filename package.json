@@ -1,18 +1,14 @@
 {
   "name": "metafunction",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "provides capabilities for function inspection and mocking",
   "homepage" : "https://github.com/dfkaye/metafunction",
   "author": {
     "name": "david kaye (@dfkaye)",
     "email" : "dfkaye@yahoo.com"
   },
-  "dependencies": {
-    "vm-shim": "~0.0.0"
-  },
   "devDependencies": {
-    "jasmine-node": "~1.0.0",
-    "vm-shim": "~0.0.0"
+    "jasmine-node": "~1.0.0"
   },
   "license": "MIT",
   "main": "./metafunction.js",
