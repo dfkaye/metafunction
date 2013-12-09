@@ -159,7 +159,8 @@ method lisping
 
 Huh?
 
-If you're like @HipsterHacker, you can use the experimental 'lisped' API:
+If you're like @HipsterHacker, you can use the experimental 'lisped' API, based 
+on [this idea](https://gist.github.com/dfkaye/7797707#clj-pattern):
 
     (meta('lisp')
      ('closure', 'mockClosure')
