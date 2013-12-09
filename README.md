@@ -1,8 +1,6 @@
 metafunction
 ============
 
-[ TODO 12/9/2013 ~ fluent/clj API ]
-
 This is a __testing__ library that decorates JavaScript's `Function.prototype` 
 in to provide capabilities for reflection and mocking to address the following:
 
