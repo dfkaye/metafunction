@@ -1,11 +1,24 @@
 metafunction
 ============
 
-This is a testing library that decorates the `Function.prototype` to provide 
-capabilities for introspection and mocking to address the following:
+[ TODO 12/9/2013 ~ fluent/clj API ]
+
+This is a __testing__ library that decorates JavaScript's `Function.prototype` 
+in to provide capabilities for reflection and mocking to address the following:
 
 + how can we inspect items defined in closures?
 + how can we override (or mock) them?
+
+Following an exchange with Phil Walton (@philwalton) 
+(see [Mocking - not testing - private functions]
+(https://gist.github.com/dfkaye/5987716)), I developed this idea while working 
+on [vm-shim](https://github.com/dfkaye/vim-shim) from which this repo borrows 
+some internal methods.
+
+The main trick uses `Function.prototype.toString()` to get a function descriptor 
+(arguments, name, returns, source), and provide some methods for overwriting 
+symbols and references within the function source and executing the new source 
+in a new context.
 
 npm
 ---
@@ -23,22 +36,27 @@ use
 
     `<script src="../metafunction.js"></script>`
 
+    
+Those will give you...
+
 Function.prototype.meta(alias?)
 -------------------------------
 
-For testing, functions should be re-definable via reflection for mocking/overwriting 
-symbols and references within "closures" or "privatized module functions"
+Any function or method now has a `.meta` method:
 
-Following an exchange of ideas with Phil Walton (@philwalton) 
-(see [Mocking - not testing - private functions]
-(https://gist.github.com/dfkaye/5987716)), I developed this idea while working 
-on [vm-shim](https://github.com/dfkaye/vim-shim) from which this repo borrows 
-some internal methods.  
+    var meta = someFunction.meta();
+    
+The `alias` argument is *optional* but really should be used any time you want to 
+run a new invocation (much like naming your test iterations).
+    
+The object returned by this call is actually a __function__.  The returned `meta` 
+function contains a `descriptor` object containing the parts of the original 
+function definition (arguments, name, returns, source).
 
-In addition, the returned metafunction contains a `descriptor` object containing
-the parts of a function definition (arguments, name, returns, source).
+It also contains methods for the aliasing, mocking/overriding and inspection of 
+closures and closure references, described below.
 
-Here's a fairly complete example:
+Best is first to view a fairly complete example:
 
     describe('README example', function () {
     
@@ -55,19 +73,21 @@ Here's a fairly complete example:
         return inner
       }());
       
+      
+      // call the meta method...
       var meta = fn.meta();
       
       it ('descriptor data', function () {
 
         var descriptor = meta.descriptor;
         
-        expect(descriptor.source).toBe(fn.toString())
         expect(descriptor.arguments[0]).toBe('exampleArg')
         expect(descriptor.name).toBe('fn')
-        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
-        expect(descriptor.source).toContain('return closure')
         expect(descriptor.returns.length).toBe(1)
         expect(descriptor.returns[0]).toBe('closure')
+        expect(descriptor.source).toBe(fn.toString())
+        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
+        expect(descriptor.source).toContain('return closure')           
       })
       
       it ('alias, inject, invoke', function () {
@@ -97,13 +117,12 @@ Here's a fairly complete example:
 Instead of figuring out the internal value inside the closure, we only override 
 the reference to the variable holding onto it, first with `inject` which takes 
 the target name and the mocking name, then with `invoke` with takes a function 
-inside of which we can call the `alias` of the closure.  
+inside of which we can call the `alias` of the closure, and a `context` argument 
+(a la `vm.runInContext`) which contains references to our test library's 
+`expect` method (I'm using jasmine for this repo), a value to be set for the the 
+injected name 'mockInside.'  You also have access to the `context` inside the 
+function executed by `invoke`.
 
-Note the trick here is to pass a second `context` argument to `invoke`
-(a la `vm.runInContext`), which contains references to the test library's 
-`expect` method, and a value to be set for the the injected name 'mockInside.'
-
-      
 tests
 -----
 
