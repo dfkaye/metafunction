@@ -73,21 +73,31 @@ Best is first to view a fairly complete example:
         return inner
       }());
       
-      
-      // call the meta method...
       var meta = fn.meta();
       
       it ('descriptor data', function () {
 
         var descriptor = meta.descriptor;
         
+        expect(descriptor.source).toBe(fn.toString())
         expect(descriptor.arguments[0]).toBe('exampleArg')
         expect(descriptor.name).toBe('fn')
+        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
+        expect(descriptor.source).toContain('return closure')
         expect(descriptor.returns.length).toBe(1)
         expect(descriptor.returns[0]).toBe('closure')
-        expect(descriptor.source).toBe(fn.toString())
-        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
-        expect(descriptor.source).toContain('return closure')           
+      })
+      
+      it ('invoke with context', function () {
+
+        meta.invoke(function () {
+        
+          expect(fn()).toBe('mocked') // should pass, calling alias()
+          expect(context).toBeDefined() // should see context object and its properties
+          expect(context.closure).toBe('mocked') // should see context object and its properties
+          expect(context.expect).toBe(expect) // should see context object and its properties
+          
+        }, { expect: expect, closure: 'mocked' })
       })
       
       it ('alias, inject, invoke', function () {
@@ -97,22 +107,32 @@ Best is first to view a fairly complete example:
         meta.invoke(function () {
         
           expect(alias()).toBe('mocked') // should pass, calling alias()
-          expect(context).toBeDefined() // should see context object and its properties
           expect(context.mockClosure).toBe('mocked') // should see context object and its properties
-          expect(context.expect).toBe(expect) // should see context object and its properties
           
         }, { expect: expect, mockClosure: 'mocked' })
       })
       
-      it('chained example', function () {
+      it('chained API example', function () {
       
-        meta('alias').inject('closure', 'mockClosure').invoke(function () {
+        meta('chain').inject('closure', 'mockClosure').invoke(function () {
         
-          expect(alias()).toBe('mocked') // should pass, calling alias()
+          expect(chain()).toBe('mocked') // should pass, calling alias()
           
         }, { expect: expect, mockClosure: 'mocked' })
       })
+      
+      it('lisped API example', function () {
+      
+        (meta('lisp')
+         ('closure', 'mockClosure')
+         (function () {
+            expect(lisp()).toBe('mocked') // should pass, calling lisp()
+          }, { 
+            expect: expect, mockClosure: 'mocked' 
+          }));
+      })    
     })
+
 
 Instead of figuring out the internal value inside the closure, we only override 
 the reference to the variable holding onto it, first with `inject` which takes 
@@ -122,6 +142,34 @@ inside of which we can call the `alias` of the closure, and a `context` argument
 `expect` method (I'm using jasmine for this repo), a value to be set for the the 
 injected name 'mockInside.'  You also have access to the `context` inside the 
 function executed by `invoke`.
+
+method chaining
+---------------
+
+The meta() API supports chaining the individual methods together:
+
+    meta('chain').
+    inject('closure', 'mockClosure').
+    invoke(function () {
+      expect(chain()).toBe('mocked') // should pass, calling alias()
+    }, { expect: expect, mockClosure: 'mocked' })
+
+method lisping
+--------------
+
+Huh?
+
+If you're like @HipsterHacker, you can use the experimental 'lisped' API:
+
+    (meta('lisp')
+     ('closure', 'mockClosure')
+     (function () {
+        expect(lisp()).toBe('mocked') // should pass, calling lisp()
+      }, { 
+        expect: expect, mockClosure: 'mocked' 
+      }));
+      
+Expect this to show up elsewhere.
 
 tests
 -----

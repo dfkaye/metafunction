@@ -145,7 +145,7 @@ describe('metafunction', function() {
       })
     })
     
-    describe('inject and invoke', function () {
+    describe('alias, inject, invoke chains', function () {
     
       var meta;
       
@@ -160,38 +160,34 @@ describe('metafunction', function() {
           inject('pObject', 'mockObject').
           inject('pValue', 'mockValue').
           invoke(function() {
-        
-            expect(chain()).toBe('mock function')
-            expect(chain('object').id).toBe('mock object')
-            expect(chain('value')).toBe('mock value')
-          
-        }, { 
-          expect: expect, 
-          mockFunc: function () { return 'mock function' },
-          mockObject: { id: 'mock object' }, 
-          mockValue: 'mock value'
-        })
+              expect(chain()).toBe('mock function')
+              expect(chain('object').id).toBe('mock object')
+              expect(chain('value')).toBe('mock value')
+          }, { 
+            expect: expect, 
+            mockFunc: function () { return 'mock function' },
+            mockObject: { id: 'mock object' }, 
+            mockValue: 'mock value'
+          });
       })
       
-      // it('should chain with clj-api, meta(name)(k, v)(fn, ctx)', function() {
+      it('should lisp with meta(name)(k, v)(fn, ctx)', function() {
              
-        // meta('chain').
-          // inject('pFunc', 'mockFunc').
-          // inject('pObject', 'mockObject').
-          // inject('pValue', 'mockValue').
-          // invoke(function() {
-        
-            // expect(chain()).toBe('mock function')
-            // expect(chain('object').id).toBe('mock object')
-            // expect(chain('value')).toBe('mock value')
-          
-        // }, { 
-          // expect: expect, 
-          // mockFunc: function () { return 'mock function' },
-          // mockObject: { id: 'mock object' }, 
-          // mockValue: 'mock value'
-        // })
-      // })
+        (meta('lisp')
+        ('pFunc', 'mockFunc')
+        ('pObject', 'mockObject')
+        ('pValue', 'mockValue')
+        (function() {
+            expect(lisp()).toBe('mock function')
+            expect(lisp('object').id).toBe('mock object')
+            expect(lisp('value')).toBe('mock value')
+          }, { 
+            expect: expect, 
+            mockFunc: function () { return 'mock function' },
+            mockObject: { id: 'mock object' }, 
+            mockValue: 'mock value'
+          }));
+      })
       
       // nested contexts don't work in IE yet
       // it('should invoke with nested contexts', function() {
@@ -209,95 +205,116 @@ describe('metafunction', function() {
         // }, { expect: expect, mock: function() { return 'label injected' }, nested: function () { return true }, meta: meta })
       // })
     })
-  })
-  
-  describe('anonymous function expression', function () {
-  
-    // fixture
-    var fn = (function () {
-      
-      var closure = true;
-      
-      var inner = function (exampleArg) {
-        // I'm a closure inside by an IIFE
-        return closure
-      }
-      return inner
-    }());
     
-    var meta = fn.meta();
+    describe('anonymous function expression', function () {
     
-    it ('should be renamed \'anonymous\'', function () {
-
-      var descriptor = meta.descriptor;
-      
-      expect(descriptor.name).toBe('anonymous')
-      expect(descriptor.source).toBe(fn.toString().replace(/function[^\(]*/, 
-                                                          'function anonymous') + '\n;')
-    })
-    
-    it ('should be invocable as \'anonymous\'', function () {
-
-      meta.inject('closure', 'mockClosure')
-      meta.invoke(function () {
-      
-        expect(anonymous()).toBe('mocked') // should pass, calling anonymous()
+      // fixture
+      var fn = (function () {
         
-      }, { expect: expect, mockClosure: 'mocked' })
-    })
-  })
-  
-  describe('README example', function () {
-  
-    // fixture
-    var fn = (function () {
-      
-      var closure = true;
-      
-      var inner = function fn(exampleArg) {
-        // I'm a closure inside by an IIFE
-        return closure
-      }
-      
-      return inner
-    }());
-    
-    var meta = fn.meta();
-    
-    it ('descriptor data', function () {
-
-      var descriptor = meta.descriptor;
-      
-      expect(descriptor.source).toBe(fn.toString())
-      expect(descriptor.arguments[0]).toBe('exampleArg')
-      expect(descriptor.name).toBe('fn')
-      expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
-      expect(descriptor.source).toContain('return closure')
-      expect(descriptor.returns.length).toBe(1)
-      expect(descriptor.returns[0]).toBe('closure')
-    })
-    
-    it ('alias, inject, invoke', function () {
-
-      meta('alias') // alias is used by invocation
-      meta.inject('closure', 'mockClosure')
-      meta.invoke(function () {
-      
-        expect(alias()).toBe('mocked') // should pass, calling alias()
-        expect(context).toBeDefined() // should see context object and its properties
-        expect(context.mockClosure).toBe('mocked') // should see context object and its properties
-        expect(context.expect).toBe(expect) // should see context object and its properties
+        var closure = true;
         
-      }, { expect: expect, mockClosure: 'mocked' })
+        var inner = function (exampleArg) {
+          // I'm a closure inside by an IIFE
+          return closure
+        }
+        return inner
+      }());
+      
+      var meta = fn.meta();
+      
+      it ('should be renamed \'anonymous\'', function () {
+
+        var descriptor = meta.descriptor;
+        
+        expect(descriptor.name).toBe('anonymous')
+        expect(descriptor.source).toBe(fn.toString().replace(/function[^\(]*/, 
+                                                            'function anonymous') + '\n;')
+      })
+      
+      it ('should be invocable as \'anonymous\'', function () {
+
+        meta.inject('closure', 'mockClosure')
+        meta.invoke(function () {
+        
+          expect(anonymous()).toBe('mocked') // should pass, calling anonymous()
+          
+        }, { expect: expect, mockClosure: 'mocked' })
+      })
     })
     
-    it('chained example', function () {
+    describe('README example', function () {
     
-      meta('alias').inject('closure', 'mockClosure').invoke(function () {
-      
-        expect(alias()).toBe('mocked') // should pass, calling alias()
+      // fixture
+      var fn = (function () {
         
-      }, { expect: expect, mockClosure: 'mocked' })
+        var closure = true;
+        
+        var inner = function fn(exampleArg) {
+          // I'm a closure inside by an IIFE
+          return closure
+        }
+        
+        return inner
+      }());
+      
+      var meta = fn.meta();
+      
+      it ('descriptor data', function () {
+
+        var descriptor = meta.descriptor;
+        
+        expect(descriptor.source).toBe(fn.toString())
+        expect(descriptor.arguments[0]).toBe('exampleArg')
+        expect(descriptor.name).toBe('fn')
+        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
+        expect(descriptor.source).toContain('return closure')
+        expect(descriptor.returns.length).toBe(1)
+        expect(descriptor.returns[0]).toBe('closure')
+      })
+      
+      it ('invoke with context', function () {
+
+        meta.invoke(function () {
+        
+          expect(fn()).toBe('mocked') // should pass, calling alias()
+          expect(context).toBeDefined() // should see context object and its properties
+          expect(context.closure).toBe('mocked') // should see context object and its properties
+          expect(context.expect).toBe(expect) // should see context object and its properties
+          
+        }, { expect: expect, closure: 'mocked' })
+      })
+      
+      it ('alias, inject, invoke', function () {
+
+        meta('alias') // alias is used by invocation
+        meta.inject('closure', 'mockClosure')
+        meta.invoke(function () {
+        
+          expect(alias()).toBe('mocked') // should pass, calling alias()
+          expect(context.mockClosure).toBe('mocked') // should see context object and its properties
+          
+        }, { expect: expect, mockClosure: 'mocked' })
+      })
+      
+      it('chained API example', function () {
+      
+        meta('chain').inject('closure', 'mockClosure').invoke(function () {
+        
+          expect(chain()).toBe('mocked') // should pass, calling alias()
+          
+        }, { expect: expect, mockClosure: 'mocked' })
+      })
+      
+      it('lisped API example', function () {
+      
+        (meta('lisp')
+         ('closure', 'mockClosure')
+         (function () {
+            expect(lisp()).toBe('mocked') // should pass, calling lisp()
+          }, { 
+            expect: expect, mockClosure: 'mocked' 
+          }));
+      })    
     })
   })
 })

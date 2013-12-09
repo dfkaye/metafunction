@@ -16,11 +16,25 @@
   function meta() {
 
     function f(alias) {
+    
+      var type = typeof arguments[0];
+      var length = arguments.length;
       
-      if (typeof alias == 'string' && !alias.match(/^[\s]+$/)) {
+      if (type == 'string') {
       
-        f.descriptor.source = f.descriptor.source.replace(/function[^\(]*/, 
+        if (length === 1 && !alias.match(/^[\s]+$/)) {
+          f.descriptor.source = f.descriptor.source.replace(/function[^\(]*/, 
                                                           'function ' + alias) + '\n;';
+        }
+        
+        if (length === 2 && typeof arguments[1] == 'string') {
+          f.inject(arguments[0], arguments[1])
+        }
+        
+      }
+      
+      if (type == 'function') {
+        f.invoke(arguments[0], arguments[1])
       }
 
       return f
