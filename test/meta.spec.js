@@ -7,20 +7,28 @@ if (typeof require == 'function') {
 describe('metafunction', function() {
 
   // fixture
-  
-  var closure = (function() {
-
-    var secret = function (arg) {
-      return 'secret says arg is ' + arg
-    };
-
-    var f = function fName(arg) {
-      return 'f: ' + secret(arg)
-    };
-
-    return f
+  var closure = (function(){
     
-  }());
+    var pValue = 444;
+    
+    var pObject = { id: 'invisible man' };
+
+    function pFunc() {
+      return 'pFuncified'
+    }
+
+    function route(type) {
+    
+      var which = (type || '').toLowerCase();
+      
+      if (which == 'value') return pValue
+      if (which == 'object') return pObject
+        
+      return pFunc()
+    }
+    
+    return route
+  }())
   
   // tests
   
@@ -30,46 +38,76 @@ describe('metafunction', function() {
       expect(typeof closure.meta).toBe('function')
     })
 
-    var meta = closure.meta();
+    describe('fixture', function () {
     
-    describe('descriptor', function () {
-    
-      var descriptor = meta.descriptor;
-            
-      it('should have .source string as function string', function () {
-        expect(descriptor.source).toBe(closure.toString())
+      it('should find fixture', function () {
+        expect(typeof closure).toBe('function')
       })
-      
-      it('should have .arguments array of function arguments', function () {
-        expect(descriptor.arguments.length).toBe(closure.length)
-        expect(descriptor.arguments[0]).toBe('arg')
-      })
-            
-      it('should have .name string for the function name', function () {
-        expect(descriptor.name).toBe("fName")
-      })
-      
-      it('should have .returns array of return statements', function () {
-        expect(descriptor.returns[0]).toBe("'f: ' + secret(arg)")
+           
+      it('should have defaults', function () {
+        expect(closure()).toBe('pFuncified')
+        expect(closure('value')).toBe(444)
+        expect(closure('object').id).toBe('invisible man')
       })
     })
     
-    describe('inject and invoke', function () {
+    describe('descriptor', function () {
     
+      var descriptor = closure.meta().descriptor;
+            
+      it('should have .arguments array of function arguments', function () {
+        expect(descriptor.arguments.length).toBe(closure.length)
+        expect(descriptor.arguments[0]).toBe('type')
+      })
+            
+      it('should have .name string for the function name', function () {
+        expect(descriptor.name).toBe("route")
+      })
+      
+      it('should have .returns array of return statements', function () {
+        expect(descriptor.returns.length).toBe(3)
+        expect(descriptor.returns[0]).toBe("pValue")
+        expect(descriptor.returns[1]).toBe("pObject")
+        expect(descriptor.returns[2]).toBe("pFunc()")
+      })
+      
+      it('should have .source string as function string', function () {
+        expect(descriptor.source).toBe(closure.toString())
+      })      
+    })
+    
+    describe('inject', function () {
+      var meta;
+      
+      beforeEach(function () {
+        meta = closure.meta();
+      })
+      
       it('should have .inject() method', function () {
         expect(typeof meta.inject).toBe('function')
       })
       
-      it('should inject mock over secret', function () {
+      it('should inject mockFunc for pFunc', function () {
       
-        // override
-        meta.inject('secret', 'mock');
-
-        expect(meta.descriptor.source).toContain('mock')
-        expect(meta.descriptor.source).not.toContain('secret')
+        meta.inject('pFunc', 'mockFunc')
+        meta.inject('pObject', 'mockObject')
+        meta.inject('pValue', 'mockValue')
         
-        // restore
-        meta.inject('mock', 'secret');
+        expect(meta.descriptor.source).toContain('return mockFunc()')
+        expect(meta.descriptor.source).not.toContain('pFunc')
+        expect(meta.descriptor.source).toContain('return mockObject')
+        expect(meta.descriptor.source).not.toContain('pObject')
+        expect(meta.descriptor.source).toContain('return mockValue')
+        expect(meta.descriptor.source).not.toContain('pValue')        
+      })
+    })
+    
+    describe('invoke', function () {
+    
+      var meta;
+      
+      beforeEach(function () {
+        meta = closure.meta();
       })
       
       it('should have .invoke() method', function () {
@@ -77,49 +115,83 @@ describe('metafunction', function() {
       })
       
       it('should invoke with context, context should be visible to scope', function() {
-      
         meta.invoke(function() {
-        
-          expect(context).toBeDefined()
-            
+          expect(context.expect).toBe(expect)
         }, { expect: expect })
       })
       
-      it('should invoke with meta(alias)', function() {
-      
-        meta('alias').invoke(function() {
-        
-          expect(alias('object')).toContain('function mocked')
-            
-        }, { secret: function() { return 'function mocked' }, expect: expect })
-      })
-      
       it('should invoke with - but not use - whitespace alias', function() {
-      
         meta(' ').invoke(function() {
-                    
-          expect(alias('object')).toContain('function mocked')
-          
-        }, { secret: function() { return 'function mocked' }, expect: expect })
+          expect(route('object').id).toBe('mock object')
+        }, { pObject: { id: 'mock object' }, expect: expect })
       })
       
-      it('should invoke with meta.invoke() and context alias', function() {
+      it('should invoke with alias functionTest', function() {
+        meta('functionTest').invoke(function() {
+          expect(functionTest('function')).toBe('mock function')
+        }, { pFunc: function() { return 'mock function' }, expect: expect })
+      })
       
-        meta.invoke(function() {
-          
-          expect(alias('object')).toContain('function mocked')
-          
-        }, { secret: function() { return 'function mocked' }, expect: expect })
+      it('should invoke with alias objectTest', function() {
+        meta('objectTest').invoke(function() {
+          expect(objectTest('object').id).toBe('mock object')
+        }, { pObject: { id: 'mock object' }, expect: expect })
+      })
+      
+      it('should invoke with alias valueTest', function() {
+        meta('valueTest').invoke(function() {
+          expect(valueTest('value')).toBe('mock value')
+        }, { pValue: 'mock value', expect: expect })
+      })
+    })
+    
+    describe('inject and invoke', function () {
+    
+      var meta;
+      
+      beforeEach(function () {
+        meta = closure.meta();
       })
       
       it('should chain with meta().inject().invoke()', function() {
-      
-        meta('second').inject('secret', 'mock').invoke(function() {
+             
+        meta('chain').
+          inject('pFunc', 'mockFunc').
+          inject('pObject', 'mockObject').
+          inject('pValue', 'mockValue').
+          invoke(function() {
         
-          expect(second('object')).toContain('label injected')
+            expect(chain()).toBe('mock function')
+            expect(chain('object').id).toBe('mock object')
+            expect(chain('value')).toBe('mock value')
           
-        }, { mock: function() { return 'label injected' }, expect: expect })
+        }, { 
+          expect: expect, 
+          mockFunc: function () { return 'mock function' },
+          mockObject: { id: 'mock object' }, 
+          mockValue: 'mock value'
+        })
       })
+      
+      // it('should chain with clj-api, meta(name)(k, v)(fn, ctx)', function() {
+             
+        // meta('chain').
+          // inject('pFunc', 'mockFunc').
+          // inject('pObject', 'mockObject').
+          // inject('pValue', 'mockValue').
+          // invoke(function() {
+        
+            // expect(chain()).toBe('mock function')
+            // expect(chain('object').id).toBe('mock object')
+            // expect(chain('value')).toBe('mock value')
+          
+        // }, { 
+          // expect: expect, 
+          // mockFunc: function () { return 'mock function' },
+          // mockObject: { id: 'mock object' }, 
+          // mockValue: 'mock value'
+        // })
+      // })
       
       // nested contexts don't work in IE yet
       // it('should invoke with nested contexts', function() {

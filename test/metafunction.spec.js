@@ -96,7 +96,7 @@ describe('metafunction', function () {
         return 'pFuncified'
       }
 
-      function fn(type) {
+      function route(type) {
       
         var which = (type || '').toLowerCase();
         
@@ -106,7 +106,7 @@ describe('metafunction', function () {
         return pFunc()
       }
       
-      return fn
+      return route
     }())
     
     describe('smoke test', function () {
