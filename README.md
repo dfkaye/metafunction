@@ -1,6 +1,8 @@
 metafunction
 ============
 
+[![Build Status](https://travis-ci.org/dfkaye/metafunction.png)](https://travis-ci.org/dfkaye/metafunction)
+
 This is a __testing__ library that decorates JavaScript's `Function.prototype` 
 in to provide capabilities for reflection and mocking to address the following:
 
