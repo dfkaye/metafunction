@@ -171,7 +171,7 @@ describe('metafunction', function() {
           });
       })
       
-      it('should lisp with meta(name)(k, v)(fn, ctx)', function() {
+      it('should lisp with k-v injection: meta(name)(k, v)(fn, ctx)', function() {
              
         (meta('lisp')
         ('pFunc', 'mockFunc')
@@ -189,21 +189,40 @@ describe('metafunction', function() {
           }));
       })
       
-      // nested contexts don't work in IE yet
-      // it('should invoke with nested contexts', function() {
+      it('should lisp with configuration: meta(name)(config)(fn)', function() {
+             
+        (meta('lisp')
+        ({ expect: expect, 
+           pFunc: function () { return 'mock function' },
+           pObject: { id: 'mock object' }, 
+           pValue: 'mock value'
+         })
+        (function() {
+            expect(lisp()).toBe('mock function')
+            expect(lisp('object').id).toBe('mock object')
+            expect(lisp('value')).toBe('mock value')
+          }));
+      })
+      
+      it('should invoke with nested invocation contexts', function() {
            
-        // meta('error').inject('secret', 'mock').invoke(function() {
+        meta('error').inject('secret', 'mock').invoke(function() {
         
-          // expect(nested()).toBe(true)
+          expect(nested()).toBe(false)
           
-          // meta('nested').invoke(function() {
+          // context argument to invoke() is visible in function scope
+          context.nested = function () { 
+            return true
+          }
           
-            // expect(nested()).toBe(true)
-                        
-          // }, context) // <= context argument to invoke() is visible in function scope
+          meta('nested').invoke(function() {
+            expect(nested()).toBe(true)
+          }, context) // <= context argument to invoke() is visible in function scope
           
-        // }, { expect: expect, mock: function() { return 'label injected' }, nested: function () { return true }, meta: meta })
-      // })
+        }, { expect: expect, meta: meta, 
+             mock: function() { return 'label injected' }, 
+             nested: function () { return false } })
+      })
     })
     
     describe('anonymous function expression', function () {
@@ -246,21 +265,21 @@ describe('metafunction', function() {
     
       // fixture
       var fn = (function () {
-        
         var closure = true;
-        
         var inner = function fn(exampleArg) {
           // I'm a closure inside by an IIFE
           return closure
         }
-        
         return inner
       }());
       
-      var meta = fn.meta();
+      var meta;
+      
+      beforeEach(function () {
+        meta = fn.meta();
+      })
       
       it ('descriptor data', function () {
-
         var descriptor = meta.descriptor;
         
         expect(descriptor.source).toBe(fn.toString())
@@ -273,48 +292,70 @@ describe('metafunction', function() {
       })
       
       it ('invoke with context', function () {
-
         meta.invoke(function () {
-        
           expect(fn()).toBe('mocked') // should pass, calling alias()
           expect(context).toBeDefined() // should see context object and its properties
           expect(context.closure).toBe('mocked') // should see context object and its properties
           expect(context.expect).toBe(expect) // should see context object and its properties
-          
         }, { expect: expect, closure: 'mocked' })
       })
       
       it ('alias, inject, invoke', function () {
-
         meta('alias') // alias is used by invocation
         meta.inject('closure', 'mockClosure')
         meta.invoke(function () {
-        
           expect(alias()).toBe('mocked') // should pass, calling alias()
           expect(context.mockClosure).toBe('mocked') // should see context object and its properties
-          
         }, { expect: expect, mockClosure: 'mocked' })
       })
       
       it('chained API example', function () {
-      
         meta('chain').inject('closure', 'mockClosure').invoke(function () {
-        
           expect(chain()).toBe('mocked') // should pass, calling alias()
-          
         }, { expect: expect, mockClosure: 'mocked' })
       })
       
-      it('lisped API example', function () {
-      
+      it('lisped API example with 2-arg', function () {
         (meta('lisp')
-         ('closure', 'mockClosure')
+         ('closure', 'mockedClosure')
          (function () {
             expect(lisp()).toBe('mocked') // should pass, calling lisp()
           }, { 
-            expect: expect, mockClosure: 'mocked' 
+            expect: expect, mockedClosure: 'mocked' 
           }));
-      })    
+      })
+
+      it('alternate lisped API example', function () {
+        (meta('lisp')
+          ({ expect: expect, closure: 'mocked' })
+          (function () {
+            expect(lisp()).toBe('mocked') // should pass, calling lisp()
+          }));
+      })
+      
+      it('nested invocation example', function () {
+        (meta('lisp')
+          ({ expect: expect, closure: 'mocked' })
+          (function () {
+            expect(lisp()).toBe('mocked') // should pass, calling lisp()
+          }));
+      })
+      
+      it('should invoke with nested invocation contexts', function() {
+        var ctx = { expect: expect, meta: meta, closure: 'mocked' };    
+        
+        meta('main').invoke(function() {
+          expect(main()).toBe('mocked')
+          
+          // context argument to invoke() is visible in function scope
+          context.closure = 'nested'
+          
+          meta('nestedMain').invoke(function() {
+            expect(nestedMain()).toBe('nested')
+          }, context)
+          
+        }, ctx)
+      })   
     })
   })
 })

@@ -33,8 +33,12 @@
         
       }
       
+      if (type == 'object' && arguments[0]) {
+        f.descriptor.context = arguments[0]
+      }
+      
       if (type == 'function') {
-        f.invoke(arguments[0], arguments[1])
+        f.invoke(arguments[0], (arguments[1] || f.descriptor.context))
       }
 
       return f
@@ -85,7 +89,6 @@
     
       // label the function as 'anonymous' in the source because function expressions must 
       // be named for use inside Function() constructor (used in runInNewContext()).
-      
       res.name = 'anonymous';
       res.source = res.source.replace(/function[^\(]*/, 'function anonymous') + '\n;';
     }
@@ -118,13 +121,13 @@
     context = context || {};
     
     // Object.create shim to shadow out the main global
-    
     function F(){}
     F.prototype = (typeof Window != 'undefined' && Window.prototype) || global;
     context.global = new F;
         
     var code = '';
     
+    // before - set local scope vars from each context property
     for (var key in context) {
       if (context.hasOwnProperty(key)) {
         code += 'var ' + key + ' = context[\'' + key + '\'];\n';
@@ -132,9 +135,15 @@
     }
     
     typeof src == 'string' || (src = '(' + src.toString() + '())');
-
-    // Yep ~ using `with` ~ who said you can't use `with` ~ WHO THE **** SAID THAT
-    code += 'with(context){' + src + '}';
+    
+    code += src + ';\n';
+    
+    // after - scoop changes back into context
+    for (var key in context) {
+      if (context.hasOwnProperty(key)) {
+        code += 'context[\'' + key + '\'] = ' + key + ';\n';
+      }
+    }
 
     // run Function() inside the sandbox so we can remove accidental globals
     return sandbox(function () {
@@ -144,15 +153,12 @@
   }
   
   /*
-   * method sandbox
-   * param function fn 
-   * returns execution result
-   * 
-   * sandbox is a helper function for scrubbing "accidental" un-var'd globals from 
-   * Function() invocations.  Unbelievably, eval() & Function() don't take functions as 
-   * args; eval() leaks un-var'd symbols in browser & node.js; indirect eval() leaks ALL 
-   * vars globally, i.e., where var e = eval; e('var a = 7'); 'a' becomes global, thus, 
-   * defeating the purpose.
+   * method sandbox - helper function for scrubbing "accidental" un-var'd globals after 
+   * eval() and Function() calls. 
+   * + Inconveniently, eval() and Function() don't take functions as arguments.  
+   * + eval() leaks un-var'd symbols in browser & node.js.
+   * + indirect eval() leaks ALL vars globally, i.e., where var e = eval; e('var a = 7'); 
+   *   'a' becomes global, thus, defeating the purpose.
    */
   function sandbox(fn) {
   
@@ -172,5 +178,4 @@
     
     return result
   }
-  
 }());

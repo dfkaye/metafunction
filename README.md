@@ -20,10 +20,12 @@ The main trick uses `Function.prototype.toString()` to get a function descriptor
 symbols and references within the function source and executing the new source 
 in a new context.
 
-npm
----
+install
+-------
 
     npm install metafunction
+    
+    git clone https://github.com/dfkaye/metafunction.git
     
 use
 ---
@@ -36,7 +38,6 @@ use
 
     `<script src="../metafunction.js"></script>`
 
-    
 Those will give you...
 
 Function.prototype.meta(alias?)
@@ -62,21 +63,21 @@ Best is first to view a fairly complete example:
     
       // fixture
       var fn = (function () {
-        
         var closure = true;
-        
         var inner = function fn(exampleArg) {
           // I'm a closure inside by an IIFE
           return closure
         }
-        
         return inner
       }());
       
-      var meta = fn.meta();
+      var meta;
+      
+      beforeEach(function () {
+        meta = fn.meta();
+      })
       
       it ('descriptor data', function () {
-
         var descriptor = meta.descriptor;
         
         expect(descriptor.source).toBe(fn.toString())
@@ -89,50 +90,71 @@ Best is first to view a fairly complete example:
       })
       
       it ('invoke with context', function () {
-
         meta.invoke(function () {
-        
           expect(fn()).toBe('mocked') // should pass, calling alias()
           expect(context).toBeDefined() // should see context object and its properties
           expect(context.closure).toBe('mocked') // should see context object and its properties
           expect(context.expect).toBe(expect) // should see context object and its properties
-          
         }, { expect: expect, closure: 'mocked' })
       })
       
       it ('alias, inject, invoke', function () {
-
         meta('alias') // alias is used by invocation
         meta.inject('closure', 'mockClosure')
         meta.invoke(function () {
-        
           expect(alias()).toBe('mocked') // should pass, calling alias()
           expect(context.mockClosure).toBe('mocked') // should see context object and its properties
-          
         }, { expect: expect, mockClosure: 'mocked' })
       })
       
       it('chained API example', function () {
-      
         meta('chain').inject('closure', 'mockClosure').invoke(function () {
-        
           expect(chain()).toBe('mocked') // should pass, calling alias()
-          
         }, { expect: expect, mockClosure: 'mocked' })
       })
       
-      it('lisped API example', function () {
-      
+      it('lisped API example with 2-arg', function () {
         (meta('lisp')
-         ('closure', 'mockClosure')
+         ('closure', 'mockedClosure')
          (function () {
             expect(lisp()).toBe('mocked') // should pass, calling lisp()
           }, { 
-            expect: expect, mockClosure: 'mocked' 
+            expect: expect, mockedClosure: 'mocked' 
           }));
-      })    
-    })
+      })
 
+      it('alternate lisped API example', function () {
+        (meta('lisp')
+          ({ expect: expect, closure: 'mocked' })
+          (function () {
+            expect(lisp()).toBe('mocked') // should pass, calling lisp()
+          }));
+      })
+      
+      it('nested invocation example', function () {
+        (meta('lisp')
+          ({ expect: expect, closure: 'mocked' })
+          (function () {
+            expect(lisp()).toBe('mocked') // should pass, calling lisp()
+          }));
+      })
+      
+      it('should invoke with nested invocation contexts', function() {
+        var ctx = { expect: expect, meta: meta, closure: 'mocked' };    
+        
+        meta('main').invoke(function() {
+          expect(main()).toBe('mocked')
+          
+          // context argument to invoke() is visible in function scope
+          context.closure = 'nested'
+          
+          meta('nestedMain').invoke(function() {
+            expect(nestedMain()).toBe('nested')
+          }, context)
+          
+        }, ctx)
+      })   
+    })
 
 Instead of figuring out the internal value inside the closure, we only override 
 the reference to the variable holding onto it, first with `inject` which takes 
@@ -157,20 +179,51 @@ The meta() API supports chaining the individual methods together:
 method lisping
 --------------
 
-Huh?
-
-If you're like @HipsterHacker, you can use the experimental 'lisped' API, based 
-on [this idea](https://gist.github.com/dfkaye/7797707#clj-pattern):
+Wait what?  If you're like @HipsterHacker, you can use the experimental 'lisped' 
+API, based on [this idea](https://gist.github.com/dfkaye/7797707#clj-pattern):
 
     (meta('lisp')
-     ('closure', 'mockClosure')
-     (function () {
+      ('closure', 'mockClosure')
+      (function () {
         expect(lisp()).toBe('mocked') // should pass, calling lisp()
-      }, { 
-        expect: expect, mockClosure: 'mocked' 
-      }));
+       }, { 
+          expect: expect, mockClosure: 'mocked' 
+       }));
       
-Expect this to show up elsewhere.
+Here's an evolving alternate form that uses a configuration specifier as the 
+invocation `context` and avoids the `inject` re-naming step:
+
+    (meta('lisp')
+      ({ expect: expect, closure: 'mocked' })
+      (function () {
+        expect(lisp()).toBe('mocked')
+      }));
+
+__TIP: Expect this form of invocation sequence to show up elsewhere.__
+
+nested invocations
+------------------
+
+More proof-of-concept gold-plating, to call invocations inside other invocations 
+you can pass the `meta` function object to the context, update the context as 
+needed, then call invoke again:
+
+    var ctx = { expect: expect, meta: meta, closure: 'mocked' };    
+    
+    meta('main').invoke(function() {
+      expect(main()).toBe('mocked')
+      
+      // context argument to invoke() is visible in function scope
+      context.closure = 'nested'
+      
+      meta('nestedMain').invoke(function() {
+        expect(nestedMain()).toBe('nested')
+      }, context)
+      
+    }, ctx)
+
+This is just a proof test that we're not blowing up the call stack in certain 
+environments (namely, Internet Explorer).
 
 tests
 -----
