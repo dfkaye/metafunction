@@ -1,7 +1,7 @@
 {
   "name": "metafunction",
-  "version": "0.0.4",
-  "description": "provides capabilities for function inspection and mocking",
+  "version": "0.0.5",
+  "description": "provides capabilities for function introspection and mocking",
   "homepage" : "https://github.com/dfkaye/metafunction",
   "author": {
     "name": "david kaye (@dfkaye)",
