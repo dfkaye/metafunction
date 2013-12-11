@@ -334,14 +334,7 @@ describe('metafunction', function() {
       })
       
       it('nested invocation example', function () {
-        (meta('lisp')
-          ({ expect: expect, closure: 'mocked' })
-          (function () {
-            expect(lisp()).toBe('mocked') // should pass, calling lisp()
-          }));
-      })
-      
-      it('should invoke with nested invocation contexts', function() {
+
         var ctx = { expect: expect, meta: meta, closure: 'mocked' };    
         
         meta('main').invoke(function() {
