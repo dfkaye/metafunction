@@ -15,6 +15,9 @@
   Function.prototype.meta = Function.prototype.meta || meta; 
   function meta() {
 
+    /*
+     * argument handler that routes to injection or invocation handlers.
+     */
     function f(alias) {
     
       var type = typeof arguments[0];
@@ -24,48 +27,99 @@
       
         if (length === 1 && !alias.match(/^[\s]+$/)) {
           f.descriptor.source = f.descriptor.source.replace(/function[^\(]*/, 
-                                                          'function ' + alias) + '\n;';
+                                                            'function ' + alias) + '\n;';
         }
         
         if (length === 2 && typeof arguments[1] == 'string') {
-          f.inject(arguments[0], arguments[1])
+          f.inject(arguments[0], arguments[1]);
         }
         
       }
       
       if (type == 'object' && arguments[0]) {
-        f.descriptor.context = arguments[0]
+        f.descriptor.context = arguments[0];
       }
       
       if (type == 'function') {
-        f.invoke(arguments[0], (arguments[1] || f.descriptor.context))
+        f.invoke(arguments[0], (arguments[1] || f.descriptor.context));
       }
 
-      return f
+      return f;
     };
-    
+
+    // fill out our descriptor object
     f.descriptor = descriptor(this);
     
+    /*
+     * returns a copy of an inner function matching the given name.
+     */
+    f.extract = function extract(name) {
+
+      var source = f.descriptor.source;
+      var match = source.match('function ' + name);
+      var brace = 0;
+      var result = '';
+      var ch;
+
+      if (match && match.index > 0) {
+        /*
+         * extract function body char by char...
+         */
+        var i = match.index;
+        for (; i < source.length; i++) {
+        
+          ch = source.charAt(i);
+          result = result + ch;
+          
+          if (ch === '{') {
+            brace += 1;
+          } else if (ch === '}') {
+            brace -= 1;
+            
+            if (brace === 0) {
+              break;
+            }
+          }
+        }
+      }
+      
+      /*
+       * use sandbox() to "compile" function string in new Function and avoid new globals.
+       */
+      return sandbox(function () {
+        return Function('return ' + result)();
+      });
+    };
+    
+    /*
+     * overwrite the name of a variable (key) in the function source with the new value.
+     */
     f.inject = function inject(key, value) {
       
       f.descriptor.source = f.descriptor.source.replace(RegExp(key, 'g'), value);
 
-      return f
+      return f;
     };
     
+    /*
+     * execute the function or source with the given context object.
+     */
     f.invoke = function invoke(fn, context) {
       
         if (typeof fn != 'function') {
           fn = 'function(){' + fn + '}';
         }
         
-        runInNewContext(f.descriptor.source + ';\r\n' + '(' + fn.toString() + '());', context)
+        runInNewContext(f.descriptor.source + ';\r\n' + '(' + fn.toString() + '());', 
+                        context);
 
-        return f
+        return f;
     };
     
-    return f
+    return f;
   }
+  
+  
 
   /*
    * method descriptor
@@ -102,9 +156,10 @@
       }
     }
         
-    return res
+    return res;
   }; 
   
+    
   ///////////////////////////////////////////////////////////////////////////////
   // runInNewContext() and sandbox() methods pulled/merged from dfkaye/vm-shim //
   ///////////////////////////////////////////////////////////////////////////////
@@ -147,9 +202,9 @@
 
     // run Function() inside the sandbox so we can remove accidental globals
     return sandbox(function () {
-      Function('context', code).call(null, context)
-      return context
-    })
+      Function('context', code).call(null, context);
+      return context;
+    });
   }
   
   /*
@@ -176,6 +231,7 @@
       }
     }
     
-    return result
+    return result;
   }
+  
 }());

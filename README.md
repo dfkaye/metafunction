@@ -218,6 +218,54 @@ needed, then call invoke again:
 This is just a proof test that we're not blowing up the call stack in certain 
 environments (namely, Internet Explorer).
 
+extracting private functions directly
+-------------------------------------
+
+I've added an `extract(functionName)` method that can be used for excavating 
+private functions from within an IFFE.  This requires that you name the IFFE 
+itself, then attach it to the exported return value ('main' in this case):
+
+    var fn = (function iffe(){
+    
+      // private
+      function increment(n) {
+        return n + 1;
+      }
+      
+      // public
+      function main(n) {
+        return increment(n);
+      };
+      
+      // expose the iffe - could make this conditional by environment/flag
+      main.iffe = iffe;
+      
+      // make return statement separate from definition
+      return main;
+    }());
+
+Given that the iffe is now reachable as `fn.iffe` you can meta-fy it, then use 
+`extract('increment')` to get a copy of the `increment` function, then use 
+`invoke()` to exercise it with the context param:
+
+    it('should extract increment() function and invoke it', function(){
+    
+      var meta = fn.iffe.meta();
+      var increment = meta.extract('increment');
+      
+      expect(typeof increment).toBe('function');
+      
+      for (var i = 0; i < 10; i++) {
+      
+        meta.invoke(function() {
+        
+          expect(increment(i)).toBe(i + 1);
+          
+        }, { increment: increment, i : i });
+      }
+    });
+      
+      
 tests
 -----
 
