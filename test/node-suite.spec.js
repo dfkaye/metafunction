@@ -1,3 +1,3 @@
 // node-suite.spec.js
-//require('./metafunction.spec');
+require('../metafunction');
 require('./meta.spec');

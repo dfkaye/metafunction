@@ -103,17 +103,18 @@
     
     /*
      * execute the function or source with the given context object.
+     * function is invoked with context set to 'this' scope 
      */
     f.invoke = function invoke(fn, context) {
       
-        if (typeof fn != 'function') {
-          fn = 'function(){' + fn + '}';
-        }
-        
-        runInNewContext(f.descriptor.source + ';\r\n' + '(' + fn.toString() + '());', 
-                        context);
+      if (typeof fn != 'function') {
+        fn = 'function(){' + fn + '}';
+      }
 
-        return f;
+      runInNewContext(f.descriptor.source + ';\r\n(' + fn.toString() + ').call(context);', 
+                      context);
+
+      return f;
     };
     
     return f;
@@ -180,7 +181,7 @@
     F.prototype = (typeof Window != 'undefined' && Window.prototype) || global;
     context.global = new F;
         
-    var code = '';
+    var code = ';\n';
     
     // before - set local scope vars from each context property
     for (var key in context) {
@@ -189,7 +190,7 @@
       }
     }
     
-    typeof src == 'string' || (src = '(' + src.toString() + '())');
+    typeof src == 'string' || (src = '(' + src.toString() + ')();');
     
     code += src + ';\n';
     
@@ -199,10 +200,12 @@
         code += 'context[\'' + key + '\'] = ' + key + ';\n';
       }
     }
+    
+    //code += 'console.log(this);\n';
 
     // run Function() inside the sandbox so we can remove accidental globals
     return sandbox(function () {
-      Function('context', code).call(null, context);
+      new (Function('context', code))(context);
       return context;
     });
   }

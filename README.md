@@ -158,6 +158,26 @@ inside of which we can call the `alias` of the closure, and a `context` argument
 injected name 'mockInside.'  You also have access to the `context` inside the 
 function executed by `invoke`.
 
+scope of `invoke()`
+-------------------
+
+To prevent scope leaking, in any `invoke(fn, ctx)` call, the function `fn` 
+argument's scope (`this`) is set to the `context` argument. Thus the following 
+bdd test should pass: 
+
+    meta('thisTest').invoke(function() {
+    
+      expect(this).toBe(context);
+      
+    }, { expect: expect });
+
+global === window
+-----------------
+
+Where node.js has a named `global` object, browser engines typically do not. The 
+`window` object contains a `global` reference to itself so you can use `global` 
+in both environments.
+
 method chaining
 ---------------
 
@@ -303,4 +323,3 @@ and also uses a custom launcher for jasmine-node (v 1.3.1).
 View both test types at the console by running:
 
     testem -l j
-

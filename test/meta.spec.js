@@ -1,8 +1,4 @@
 // meta.spec.js
-
-if (typeof require == 'function') {
-  require('../metafunction')
-}
   
 describe('metafunction', function() {
 
@@ -116,7 +112,9 @@ describe('metafunction', function() {
       
       it('should invoke with context, context should be visible to scope', function() {
         meta.invoke(function() {
+        
           expect(context.expect).toBe(expect);
+          
         }, { expect: expect });
       });
       
@@ -150,6 +148,20 @@ describe('metafunction', function() {
           expect(valueTest('value')).toBe('mock value');
           
         }, { pValue: 'mock value', expect: expect });
+      });
+
+      it('should invoke with context set to \'this\' scope', function () {
+        meta('thisTest').invoke(function() {
+                    
+          expect(this).not.toBe(global);
+          
+          expect(this).toBe(context);
+          expect(this.expect).toBe(expect);
+          expect(this.pValue).toBe(pValue);
+          
+          this.expect(this.pValue).toBe('thisTestValue');
+          
+        }, { pValue: 'thisTestValue', expect: expect });
       });
     });
     
