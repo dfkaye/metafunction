@@ -1,8 +1,8 @@
 // metafunction.js
 
-;(function (metafunction, undefined) {
+;(function () {
  
-  if (typeof global == 'undefined' && window) {  
+  if (typeof global == 'undefined' && typeof window != 'undefined') {  
     global = window;
   }
 
@@ -33,7 +33,6 @@
         if (length === 2 && typeof arguments[1] == 'string') {
           f.inject(arguments[0], arguments[1]);
         }
-        
       }
       
       if (type == 'object' && arguments[0]) {
@@ -62,9 +61,8 @@
       var ch;
 
       if (match && match.index > 0) {
-        /*
-         * extract function body char by char...
-         */
+      
+        //extract function body char by char...
         var i = match.index;
         for (; i < source.length; i++) {
         
@@ -83,9 +81,7 @@
         }
       }
       
-      /*
-       * use sandbox() to "compile" function string in new Function and avoid new globals.
-       */
+      // use sandbox() to "compile" function string in new Function and avoid new globals.
       return sandbox(function () {
         return Function('return ' + result)();
       });
@@ -107,26 +103,21 @@
      */
     f.invoke = function invoke(fn, context) {
       
-      if (typeof fn != 'function') {
-        fn = 'function(){' + fn + '}';
-      }
-
+      typeof fn == 'function' || (fn = 'function(){' + fn + '}');
+      
       runInNewContext(f.descriptor.source + ';\r\n(' + fn.toString() + ').call(context);', 
                       context);
-
       return f;
     };
     
     return f;
   }
   
-  
 
   /*
    * method descriptor
    * returns object describing function parts - arguments, name, returns, source
    */
-  //Function.prototype.descriptor = descriptor; 
   function descriptor(fn) {
     
     var fs = fn.toString();
@@ -174,7 +165,7 @@
    */   
   function runInNewContext(src, context/*, filename*/) {
 
-    context = context || {};
+    context || (context = {});
     
     // Object.create shim to shadow out the main global
     function F(){}
@@ -221,14 +212,15 @@
   function sandbox(fn) {
   
     var keys = {};
+    var result, k;
     
-    for (var k in global) {
+    for (k in global) {
       keys[k] = k;
     }
     
-    var result = fn();
+    result = fn();
     
-    for (var k in global) {
+    for (k in global) {
       if (!(k in keys)) {
         delete global[k];
       }
