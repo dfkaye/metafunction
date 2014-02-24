@@ -57,6 +57,8 @@ function definition (arguments, name, returns, source).
 It also contains methods for the aliasing, mocking/overriding and inspection of 
 closures and closure references, described below.
 
+## complete example spec
+
 Best is first to view a fairly complete example:
 
     describe('README example', function () {
@@ -66,89 +68,128 @@ Best is first to view a fairly complete example:
         var closure = true;
         var inner = function fn(exampleArg) {
           // I'm a closure inside by an IIFE
-          return closure
-        }
-        return inner
+          return closure;
+        };
+        return inner;
       }());
       
       var meta;
       
       beforeEach(function () {
         meta = fn.meta();
-      })
+      });
       
       it ('descriptor data', function () {
+      
         var descriptor = meta.descriptor;
         
-        expect(descriptor.source).toBe(fn.toString())
-        expect(descriptor.arguments[0]).toBe('exampleArg')
-        expect(descriptor.name).toBe('fn')
-        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE')
-        expect(descriptor.source).toContain('return closure')
-        expect(descriptor.returns.length).toBe(1)
-        expect(descriptor.returns[0]).toBe('closure')
-      })
+        expect(descriptor.source).toBe(fn.toString());
+        expect(descriptor.arguments[0]).toBe('exampleArg');
+        expect(descriptor.name).toBe('fn');
+        expect(descriptor.source).toContain('// I\'m a closure inside by an' +
+                                            ' IIFE');
+        expect(descriptor.source).toContain('return closure');
+        expect(descriptor.returns.length).toBe(1);
+        expect(descriptor.returns[0]).toBe('closure');
+      });
       
       it ('invoke with context', function () {
         meta.invoke(function () {
-          expect(fn()).toBe('mocked') // should pass, calling alias()
-          expect(context).toBeDefined() // should see context object and its properties
-          expect(context.closure).toBe('mocked') // should see context object and its properties
-          expect(context.expect).toBe(expect) // should see context object and its properties
-        }, { expect: expect, closure: 'mocked' })
-      })
+        
+          // should pass, calling alias()
+          expect(fn()).toBe('mocked');
+          
+          // should see context object and its properties
+          expect(context).toBeDefined();
+          
+          // should see context object and its properties
+          expect(context.closure).toBe('mocked');
+          
+          // should see context object and its properties
+          expect(context.expect).toBe(expect);
+          
+        }, { expect: expect, closure: 'mocked' });
+      });
       
       it ('alias, inject, invoke', function () {
-        meta('alias') // alias is used by invocation
-        meta.inject('closure', 'mockClosure')
+      
+        meta('alias'); // alias is used by invocation
+        meta.inject('closure', 'mockClosure');
         meta.invoke(function () {
-          expect(alias()).toBe('mocked') // should pass, calling alias()
-          expect(context.mockClosure).toBe('mocked') // should see context object and its properties
-        }, { expect: expect, mockClosure: 'mocked' })
-      })
+        
+          // should pass, calling alias()
+          expect(alias()).toBe('mocked');
+          
+          // should see context object and its properties
+          expect(context.mockClosure).toBe('mocked');
+          
+        }, { expect: expect, mockClosure: 'mocked' });
+      });
       
       it('chained API example', function () {
+      
         meta('chain').inject('closure', 'mockClosure').invoke(function () {
-          expect(chain()).toBe('mocked') // should pass, calling alias()
-        }, { expect: expect, mockClosure: 'mocked' })
-      })
+        
+          expect(chain()).toBe('mocked'); // should pass, calling alias()
+          
+        }, { expect: expect, mockClosure: 'mocked' });
+      });
       
       it('lisped API example with 2-arg', function () {
+      
         (meta('lisp')
-         ('closure', 'mockedClosure')
-         (function () {
-            expect(lisp()).toBe('mocked') // should pass, calling lisp()
-          }, { 
-            expect: expect, mockedClosure: 'mocked' 
-          }));
-      })
+        ('closure', 'mockedClosure')
+        (function () {
+
+          expect(lisp()).toBe('mocked'); // should pass, calling lisp()
+          
+         }, { 
+          expect: expect, mockedClosure: 'mocked' 
+         }));
+      });
 
       it('alternate lisped API example', function () {
         (meta('lisp')
-          ({ expect: expect, closure: 'mocked' })
-          (function () {
-            expect(lisp()).toBe('mocked') // should pass, calling lisp()
-          }));
-      })
+        ({ expect: expect, closure: 'mocked' })
+        (function () {
+          expect(lisp()).toBe('mocked'); // should pass, calling lisp()
+        }));
+      });
+      
+      it('really terse alternate lisped API example', function () {
+         // surround function object entirely
+        (meta) 
+         // pass alias arg to it
+        ('lisp')
+         // set context
+        ({ expect: expect, closure: 'mocked' })
+         // set invoke function which should pass, calling lisp()
+        (function () {
+          expect(lisp()).toBe('mocked'); 
+        });
+         // final semi-colon, only one parenthesis after final call
+      });
       
       it('nested invocation example', function () {
 
         var ctx = { expect: expect, meta: meta, closure: 'mocked' };    
         
         meta('main').invoke(function() {
-          expect(main()).toBe('mocked')
+          
+          expect(main()).toBe('mocked');
           
           // context argument to invoke() is visible in function scope
-          context.closure = 'nested'
+          context.closure = 'nested';
           
           meta('nestedMain').invoke(function() {
-            expect(nestedMain()).toBe('nested')
-          }, context)
+            expect(nestedMain()).toBe('nested');
+          }, context);
           
-        }, ctx)
-      })   
-    })
-
+        }, ctx);
+      });
+    });
+    
+    
 Instead of figuring out the internal value inside the closure, we only override 
 the reference to the variable holding onto it, first with `inject` which takes 
 the target name and the mocking name, then with `invoke` with takes a function 
@@ -211,6 +252,10 @@ invocation `context` and avoids the `inject` re-naming step:
       (function () {
         expect(lisp()).toBe('mocked')
       }));
+
+Another wiggier form:
+
+
 
 __TIP: Expect this form of invocation sequence to show up elsewhere.__
 

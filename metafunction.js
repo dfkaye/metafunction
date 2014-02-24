@@ -2,6 +2,7 @@
 
 ;(function () {
  
+  // alias global for re-use across both node.js and browser environments
   if (typeof global == 'undefined' && typeof window != 'undefined') {  
     global = window;
   }
@@ -9,8 +10,8 @@
   /*
    * method meta
    * param alias
-   * returns function object with injection and invocation methods for mocking internal 
-   * references in a closure
+   * returns function object with injection and invocation methods for mocking 
+   * internal references in a closure
    */
   Function.prototype.meta = Function.prototype.meta || meta; 
   function meta() {
@@ -27,7 +28,8 @@
       
         if (length === 1 && !alias.match(/^[\s]+$/)) {
           f.descriptor.source = f.descriptor.source.replace(/function[^\(]*/, 
-                                                            'function ' + alias) + '\n;';
+                                                            'function ' + 
+                                                            alias) + '\n;';
         }
         
         if (length === 2 && typeof arguments[1] == 'string') {
@@ -81,18 +83,23 @@
         }
       }
       
-      // use sandbox() to "compile" function string in new Function and avoid new globals.
+      /*
+       * use sandbox() to "compile" function string in new Function and avoid 
+       * new globals.
+       */
       return sandbox(function () {
         return Function('return ' + result)();
       });
     };
     
     /*
-     * overwrite the name of a variable (key) in the function source with the new value.
+     * overwrite the name of a variable (key) in the function source with the
+     * new value.
      */
     f.inject = function inject(key, value) {
       
-      f.descriptor.source = f.descriptor.source.replace(RegExp(key, 'g'), value);
+      f.descriptor.source = f.descriptor.source.replace(RegExp(key, 'g'), 
+                                                        value);
 
       return f;
     };
@@ -105,8 +112,8 @@
       
       typeof fn == 'function' || (fn = 'function(){' + fn + '}');
       
-      runInNewContext(f.descriptor.source + ';\r\n(' + fn.toString() + ').call(context);', 
-                      context);
+      runInNewContext(f.descriptor.source + ';\r\n(' + fn.toString() + 
+                      ').call(context);', context);
       return f;
     };
     
@@ -124,19 +131,26 @@
     var res = {};
     
     res.source = fs;
-    res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')')).replace(/\s*/g, '')
-                      .split(',');
+    res.arguments = fs.substring(fs.indexOf('(') + 1, fs.indexOf(')'))
+                      .replace(/\s*/g, '').split(',');
 
-    // extract name from a function expression (https://gist.github.com/dfkaye/6384439)
+    /*
+     * extract name from a function expression 
+     * (https://gist.github.com/dfkaye/6384439)
+     */
     var name;
     if (name = (fn.name && ['', fn.name]) || (fs.match(/function ([^\(]+)/))) {
       res.name = name[1];
     } else {
     
-      // label the function as 'anonymous' in the source because function expressions must 
-      // be named for use inside Function() constructor (used in runInNewContext()).
+      /*
+       * label the function as 'anonymous' in the source because function 
+       * expressions must be named for use inside Function() constructor (used 
+       * in runInNewContext()).
+       */
       res.name = 'anonymous';
-      res.source = res.source.replace(/function[^\(]*/, 'function anonymous') + '\n;';
+      res.source = res.source.replace(/function[^\(]*/, 'function anonymous') + 
+                   '\n;';
     }
     
     var returns;
@@ -152,14 +166,15 @@
   }; 
   
     
-  ///////////////////////////////////////////////////////////////////////////////
-  // runInNewContext() and sandbox() methods pulled/merged from dfkaye/vm-shim //
-  ///////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
+  // runInNewContext() and sandbox() methods plucked from dfkaye/vm-shim      //
+  //////////////////////////////////////////////////////////////////////////////
   
   /*
    * method runInNewContext
    * param src may be a string or a function
-   * param context is an optional config object of properties to be used as vars inside 
+   * param context is an optional config object of properties to be used as vars 
+   * inside 
    * new scope
    * returns context
    */   
@@ -202,11 +217,13 @@
   }
   
   /*
-   * method sandbox - helper function for scrubbing "accidental" un-var'd globals after 
-   * eval() and Function() calls. 
+   * method sandbox - helper function for scrubbing "accidental" un-var'd 
+   * globals after eval() and Function() calls. 
    * + Inconveniently, eval() and Function() don't take functions as arguments.  
    * + eval() leaks un-var'd symbols in browser & node.js.
-   * + indirect eval() leaks ALL vars globally, i.e., where var e = eval; e('var a = 7'); 
+   * + indirect eval() leaks ALL vars globally, i.e., where 
+   *      var e = eval; 
+   *      e('var a = 7'); 
    *   'a' becomes global, thus, defeating the purpose.
    */
   function sandbox(fn) {

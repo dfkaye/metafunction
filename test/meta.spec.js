@@ -193,7 +193,7 @@ describe('metafunction', function() {
           });
       });
       
-      it('should lisp with k-v injection: meta(name)(k, v)(fn, ctx)', function() {
+      it('should lisp with injection: meta(name)(k, v)(fn, ctx)', function() {
              
         (meta('lisp')
         ('pFunc', 'mockFunc')
@@ -235,7 +235,7 @@ describe('metafunction', function() {
         
           expect(nested()).toBe(false);
           
-          // context argument to invoke() is visible in function scope
+          // outer context argument to invoke() is visible in function scope
           context.nested = function () { 
             return true;
           };
@@ -244,7 +244,7 @@ describe('metafunction', function() {
           
             expect(nested()).toBe(true);
             
-          }, context); // <= context argument to invoke() is visible in function scope
+          }, context); // <= nested context argument visible in function scope
           
         }, { expect: expect, meta: meta, 
              mock: function() { return 'label injected'; }, 
@@ -271,10 +271,10 @@ describe('metafunction', function() {
       it ('should be renamed \'anonymous\'', function () {
 
         var descriptor = meta.descriptor;
-        
+        var strFnAn = 'function anonymous';
         expect(descriptor.name).toBe('anonymous');
         expect(descriptor.source).toBe(fn.toString().replace(/function[^\(]*/, 
-                                                            'function anonymous') + '\n;');
+                                                             strFnAn) + '\n;');
       });
       
       it ('should be invocable as \'anonymous\'', function () {
@@ -282,7 +282,8 @@ describe('metafunction', function() {
         meta.inject('closure', 'mockClosure');
         meta.invoke(function () {
         
-          expect(anonymous()).toBe('mocked'); // should pass, calling anonymous()
+          // should pass, calling anonymous()
+          expect(anonymous()).toBe('mocked');
           
         }, { expect: expect, mockClosure: 'mocked' });
         
@@ -314,7 +315,8 @@ describe('metafunction', function() {
         expect(descriptor.source).toBe(fn.toString());
         expect(descriptor.arguments[0]).toBe('exampleArg');
         expect(descriptor.name).toBe('fn');
-        expect(descriptor.source).toContain('// I\'m a closure inside by an IIFE');
+        expect(descriptor.source).toContain('// I\'m a closure inside by an' +
+                                            ' IIFE');
         expect(descriptor.source).toContain('return closure');
         expect(descriptor.returns.length).toBe(1);
         expect(descriptor.returns[0]).toBe('closure');
@@ -323,26 +325,38 @@ describe('metafunction', function() {
       it ('invoke with context', function () {
         meta.invoke(function () {
         
-          expect(fn()).toBe('mocked'); // should pass, calling alias()
-          expect(context).toBeDefined(); // should see context object and its properties
-          expect(context.closure).toBe('mocked'); // should see context object and its properties
-          expect(context.expect).toBe(expect); // should see context object and its properties
+          // should pass, calling alias()
+          expect(fn()).toBe('mocked');
+          
+          // should see context object and its properties
+          expect(context).toBeDefined();
+          
+          // should see context object and its properties
+          expect(context.closure).toBe('mocked');
+          
+          // should see context object and its properties
+          expect(context.expect).toBe(expect);
           
         }, { expect: expect, closure: 'mocked' });
       });
       
       it ('alias, inject, invoke', function () {
+      
         meta('alias'); // alias is used by invocation
         meta.inject('closure', 'mockClosure');
         meta.invoke(function () {
         
-          expect(alias()).toBe('mocked'); // should pass, calling alias()
-          expect(context.mockClosure).toBe('mocked'); // should see context object and its properties
+          // should pass, calling alias()
+          expect(alias()).toBe('mocked');
+          
+          // should see context object and its properties
+          expect(context.mockClosure).toBe('mocked');
           
         }, { expect: expect, mockClosure: 'mocked' });
       });
       
       it('chained API example', function () {
+      
         meta('chain').inject('closure', 'mockClosure').invoke(function () {
         
           expect(chain()).toBe('mocked'); // should pass, calling alias()
@@ -371,6 +385,20 @@ describe('metafunction', function() {
         }));
       });
       
+      it('really terse alternate lisped API example', function () {
+         // surround function object entirely
+        (meta) 
+         // pass alias arg to it
+        ('lisp')
+         // set context
+        ({ expect: expect, closure: 'mocked' })
+         // set invoke function which should pass, calling lisp()
+        (function () {
+          expect(lisp()).toBe('mocked'); 
+        });
+         // final semi-colon, only one parenthesis after final call
+      });
+      
       it('nested invocation example', function () {
 
         var ctx = { expect: expect, meta: meta, closure: 'mocked' };    
@@ -394,14 +422,16 @@ describe('metafunction', function() {
     describe('using extract() to test private function directly', function () {
     
       /*
-        Assume iffe returns a main function when invoked:
-        1. name the iffe
-        2. attach iffe as property to the main function the iffe normally defines/returns
-        3. verify iffe returns main
-        4. verify iffe attached to main
-        5. meta-fy iffe and use extract(methodName) to get hidden method
-        6. invoke() target method (call it inside invoke function param)
-        */
+       * Assume iffe returns a main function when invoked:
+       *
+       * 1. name the iffe
+       * 2. attach iffe as property to the main function the iffe normally 
+       *    defines or returns
+       * 3. verify iffe returns main
+       * 4. verify iffe attached to main
+       * 5. meta-fy iffe and use extract(methodName) to get hidden method
+       * 6. invoke() target method (call it inside invoke function param)
+       */
         
       // fixture
       var fn = (function iffe(){
@@ -416,7 +446,10 @@ describe('metafunction', function() {
           return increment(n);
         };
         
-        // expose the iffe - could make this conditional by environment or 'expect'
+        /*
+         * expose the iffe - could make this conditional by environment or 
+         * 'expect'
+         */
         main.iffe = iffe;
         
         // make return statement separate from definition
@@ -433,9 +466,12 @@ describe('metafunction', function() {
         expect(fn.iffe.toString()).toContain('function iffe');
       });
       
-      // meta-fy iffe
-      // extract increment() function
-      // invoke increment() inside invoke() function param, passing it by context param.    
+      /*
+       * meta-fy iffe
+       * extract increment() function
+       * invoke increment() inside invoke() function param, passing it by 
+       * context param.
+       */
       it('should extract increment() function and invoke it', function(){
       
         var meta = fn.iffe.meta();
