@@ -255,7 +255,12 @@ invocation `context` and avoids the `inject` re-naming step:
 
 Another wiggier form:
 
-
+    (meta)
+    ('lisp')
+    ({ expect: expect, closure: 'mocked' })
+    (function () {
+      expect(lisp()).toBe('mocked')
+    });
 
 __TIP: Expect this form of invocation sequence to show up elsewhere.__
 
