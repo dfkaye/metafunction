@@ -363,7 +363,10 @@ the browser suite.
 __The *jasmine2* browser test page is viewable on 
 <a href='//rawgithub.com/dfkaye/metafunction/master/test/browser-suite.html' 
    target='_new' title='opens in new tab or window'>rawgithub</a>.__
-  
+
+testem
+------
+
 Using Toby Ho's MAGNIFICENT [testemjs](https://github.com/airportyh/testem) to 
 drive tests in multiple browsers for jasmine-2.0.0 (see how to 
 [hack testem for jasmine 2](https://github.com/dfkaye/testem-jasmine2)), as well 
