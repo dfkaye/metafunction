@@ -359,7 +359,7 @@ describe('metafunction', function() {
       
         meta('chain').inject('closure', 'mockClosure').invoke(function () {
         
-          expect(chain()).toBe('mocked'); // should pass, calling alias()
+          expect(chain()).toBe('mocked'); // should pass, calling chain()
           
         }, { expect: expect, mockClosure: 'mocked' });
       });
