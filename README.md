@@ -130,7 +130,7 @@ Best is first to view a fairly complete example:
       
         meta('chain').inject('closure', 'mockClosure').invoke(function () {
         
-          expect(chain()).toBe('mocked'); // should pass, calling alias()
+          expect(chain()).toBe('mocked'); // should pass, calling chain()
           
         }, { expect: expect, mockClosure: 'mocked' });
       });
@@ -227,7 +227,7 @@ The meta() API supports chaining the individual methods together:
     meta('chain').
     inject('closure', 'mockClosure').
     invoke(function () {
-      expect(chain()).toBe('mocked') // should pass, calling alias()
+      expect(chain()).toBe('mocked') // should pass, calling chain()
     }, { expect: expect, mockClosure: 'mocked' })
 
 method lisping
