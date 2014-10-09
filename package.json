@@ -1,6 +1,6 @@
 {
   "name": "metafunction",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "provides capabilities for function introspection and mocking",
   "homepage" : "https://github.com/dfkaye/metafunction",
   "author": {

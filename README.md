@@ -361,8 +361,8 @@ Using @pivotallabs'
 the browser suite.
 
 __The *jasmine2* browser test page is viewable on 
-<a href='//rawgithub.com/dfkaye/metafunction/master/test/browser-suite.html' 
-   target='_new' title='opens in new tab or window'>rawgithub</a>.__
+<a href='//rawgit.com/dfkaye/metafunction/master/test/browser-suite.html' 
+   target='_new' title='opens in new tab or window'>rawgit</a>.__
 
 testem
 ------
